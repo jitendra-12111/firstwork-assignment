@@ -1,73 +1,47 @@
-from sqlalchemy.orm import Session
+from typing import Any
 
-from app.models import Contract, Rule
-from app.repositories import rule_repo
-from app.utils.common_utils import is_placeholder, cast_value, compare
+from app.models import Rule
+from app.services.placeholder import PlaceholderService
+from app.services.rule_context import RuleContext
+from app.utils.common_utils import cast_value, compare
 
 
-class RuleEvaluateService:
-    def __init__(self, db: Session, contract: Contract):
-        self.contract = contract
-        self.db = db
-        self.rule_cache  = {}
-        self.rule_eval = {}
+class RuleEngine:
+    def __init__(self, ctx: RuleContext, placeholders: dict[str, Any] | None = None):
+        self.ctx = ctx
+        self.placeholders = PlaceholderService(placeholders)
 
-        self.model_map = {
-            'Contract': contract,
-            'User': contract.user,
-            'Company': contract.company
-        }
+    def evaluate(self, rule_id: int) -> bool:
+        if self.ctx.is_solved(rule_id):
+            return self.ctx.get_output(rule_id)
 
-    def _get_rule(self, rule_id: int) -> Rule:
-        if rule_id not in self.rule_cache:
-            self.rule_cache[rule_id] = rule_repo.get_by_id(self.db, rule_id)
+        rule = self.ctx.get_rule(rule_id)
+        op = rule.operator
 
-        return self.rule_cache[rule_id]
-
-    def run(self, rule_id: int, payload: dict):
-        return self._solve(rule_id, payload)
-
-    def _solve(self, rule_id: int, payload: dict):
-        if rule_id in self.rule_eval:
-            return self.rule_eval[rule_id]
-
-        rule = self._get_rule(rule_id)
-
-        if rule.operator == 'OR':
-            result = any(self._solve(int(sub_rule_id), payload) for sub_rule_id in rule.value.split(','))
-
-        elif rule.operator == 'AND':
-            result = all(self._solve(int(sub_rule_id), payload) for sub_rule_id in rule.value.split(','))
-
+        if op == 'OR':
+            result = any(self.evaluate(int(c)) for c in rule.value.split(','))
+        elif op == 'AND':
+            result = all(self.evaluate(int(c)) for c in rule.value.split(','))
         else:
-            result = self._evaluate_rule(rule, payload)
+            result = self._evaluate_rule(rule)
 
-        self.rule_eval[rule_id] = result
-
+        self.ctx.set_output(rule_id, result)
         return result
 
-    def _evaluate_rule(self, rule: Rule, payload: dict):
-
-        left_operand, rule_data_type = self.parse_left_operand(rule)
-
-        right_operand = self.parse_right_operand(
-            rule=rule,
-            rule_data_type=rule_data_type,
-            payload=payload
-        )
+    def _evaluate_rule(self, rule: Rule) -> bool:
+        left_operand, operator_data_type = self._parse_left_operand(rule)
+        right_operand = self._parse_right_operand(rule, operator_data_type)
 
         if left_operand is None:
-            raise Exception('Parsing error in left operand')
-
+            raise ValueError(f"rule {rule.id}: left operand could not be parsed")
         if right_operand is None:
-            raise Exception('Parsing error in right operand')
+            raise ValueError(f"rule {rule.id}: right operand could not be parsed")
 
         return compare(left_operand, right_operand, rule.operator)
 
-    def parse_left_operand(self, rule: Rule):
-        print(rule.operator, rule.field_name)
+    def _parse_left_operand(self, rule: Rule):
         model_name, field_name = rule.field_name.split('.')
-        model_instance = self.model_map[model_name]
+        model_instance = self.ctx.model_map[model_name]
 
         # Model base class has custom function that get field/column datatype in table
         # This will be the common datatype for both operand of operator
@@ -77,22 +51,6 @@ class RuleEvaluateService:
 
         return left_operand_val, rule_data_type
 
-    def parse_right_operand(self, rule, rule_data_type, payload):
-        # DB str value of rule, not a placeholder
-        raw_value = rule.value
-
-        # In case placeholder, we got a place in extra params
-        if is_placeholder(rule.value):
-            # parsing_value
-            placeholder_value = payload.get(rule.value[2:-2], None)
-            print(placeholder_value)
-
-            if placeholder_value is None:
-                raise Exception('Parsing error in right operand')
-
-            # DB and Placeholder now in same data type, later parse with rule datatype
-            raw_value = str(placeholder_value)
-
-        # parse raw_value to rule_data_type
-        # rule_data_type is a common datatype for operator
-        return cast_value(rule_data_type, raw_value)
+    def _parse_right_operand(self, rule: Rule, rule_data_type: str):
+        raw = self.placeholders.resolve(rule.value)
+        return cast_value(rule_data_type, raw)
