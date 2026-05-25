@@ -17,7 +17,7 @@ def evaluate(contract_id: int, body: CompliancePayload, db: Session = Depends(ge
     compliance = ComplianceService(
         db=db,
         contract_id=contract_id,
-        placeholders=body.placeholders,
+        placeholder=body.placeholder,
         rule_ids=body.rule_ids,
     )
     return compliance.evaluate_policy()
