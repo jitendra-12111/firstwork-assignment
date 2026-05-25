@@ -31,7 +31,7 @@ echo "▸ 4/5  Running migrations"
 uv run alembic upgrade head
 
 echo "▸ 5/5  Loading seed data"
-docker compose exec -T db mysql -u root -psecret firstwork < data/seed.sql
+docker compose exec -T db mysql -u root -psecret firstwork < data/seed_dump.sql
 
 echo
 echo "✓ Setup complete."
