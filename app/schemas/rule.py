@@ -9,12 +9,14 @@ COMPOSITE_VALUE_PATTERN = re.compile(r"^\d+(,\d+)*$")  # "1,2,3"
 
 def validate_rule_fields(op: str | None, fn: str | None, val: str | None) -> None:
 
+    # Checking operator valid or not
     if op is not None and op not in VALID_OPERATORS | COMPOSITE_OPERATORS:
         raise ValueError(
             f"Invalid operator '{op}'. "
-            f"Leaf: {VALID_OPERATORS}  Composite: {COMPOSITE_OPERATORS}"
+            f"Rule: {VALID_OPERATORS}  CompositeRule: {COMPOSITE_OPERATORS}"
         )
 
+    # rule is composite check field name and value are valid or not
     if op in COMPOSITE_OPERATORS:
         if fn is not None and fn != "__composite__":
             raise ValueError(
@@ -25,6 +27,7 @@ def validate_rule_fields(op: str | None, fn: str | None, val: str | None) -> Non
                 f"Composite value must be comma-separated rule ids e.g. '1,2,3', got '{val}'"
             )
 
+    # check non composite rule with valid or invalid field
     elif op in VALID_OPERATORS:
         if fn is not None and fn not in ALLOWED_FIELDS:
             raise ValueError(
@@ -41,6 +44,7 @@ class RuleCreate(BaseModel):
     operator: str
     value: str
 
+    """Validate object"""
     @model_validator(mode="after")
     def validate_rule(self):
         # Here fields are not None, so all filed should have present
@@ -54,6 +58,7 @@ class RuleUpdate(BaseModel):
     operator: str | None = None
     value: str | None = None
 
+    """check new field may be invalid"""
     @model_validator(mode="after")
     def validate_rule(self):
         validate_rule_fields(self.operator, self.field_name, self.value)

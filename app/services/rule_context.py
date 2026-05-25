@@ -3,12 +3,18 @@ from sqlalchemy.orm import Session
 from app.models import Contract
 from app.repositories import rule_repo
 
+"""
+It a context/state of Rule engine
+For each contract, list of rules have common context(avoid recalculation)
+context change when contract change
 
+"""
 class RuleContext:
-    def __init__(self, db: Session, contract: Contract, placeholders: dict | None = None):
+    def __init__(self, db: Session, contract: Contract, placeholder: dict | None = None):
         self.db = db
+        # Contract same for all rule
         self.contract = contract
-        self.placeholders = placeholders or {}
+        self.placeholder = placeholder or {}
         self._rule_cache = {}
         self._output_cache = {}
         self.model_map = {

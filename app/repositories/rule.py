@@ -10,4 +10,5 @@ class RuleRepository:
         return db.query(Rule).all()
 
 
+# single cache object dynamic based on session
 rule_repo = RuleRepository()

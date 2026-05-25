@@ -27,6 +27,9 @@ def create_rule(body: RuleCreate, db: Session = Depends(get_db)):
         # reset the session
         db.rollback()
         raise HTTPException(status_code=409, detail='Duplicate rule, already exists')
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
 
     # after refresh, rule will get generate id
     db.refresh(rule)
@@ -50,9 +53,13 @@ def update_rule(rule_id: int, body: RuleUpdate, db: Session = Depends(get_db)):
 
     try:
         db.commit()
+    #Exception of integrity won't work now as i removed unique index
     except IntegrityError:
         db.rollback()
         raise HTTPException(status_code=409, detail='Duplicate rule, already exists')
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
 
     db.refresh(rule)
     return rule

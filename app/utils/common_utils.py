@@ -4,8 +4,8 @@ from decimal import Decimal
 from sqlalchemy import Date, DateTime, DECIMAL, Integer, Boolean
 
 
+""" Cast value to field_type of Field Name (User.name) """
 def cast_value(field_type, value: str):
-    # Cast str value to db field type
 
     if isinstance(field_type, Boolean):
         return value.strip().lower() == "true"
@@ -25,7 +25,6 @@ def is_placeholder(value):
     return value.startswith("{{") and value.endswith("}}")
 
 def compare(left_operand, right_operand, operator: str):
-    print(f"({left_operand} {operator} {right_operand})")
     if operator == '==':
         return left_operand == right_operand
     elif operator == '!=':

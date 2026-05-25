@@ -7,23 +7,26 @@ from app.services.rule_context import RuleContext
 
 
 class EligibilityService:
-    def eligible_contracts(self, db: Session,  company_id: int, rule_id: int, placeholders: dict | None = None):
+    def eligible_contracts(self, db: Session,  company_id: int, rule_id: int, placeholder: dict | None = None):
 
-        contracts = contract_repo.get_contract_by_company_id_join_user_company(db, company_id)
+        """Get company contracts"""
+        contracts = contract_repo.get_company_contracts(db, company_id)
 
         if len(contracts) == 0:
-            raise Exception('No contracts found')
+            raise Exception(f'company contracts not found')
 
         response = []
 
         for contract in contracts:
+            """Rule Context is a common for all sub rules of each contract"""
             ctx = RuleContext(
                 db=db,
                 contract=contract,
-                placeholders=placeholders
+                placeholder=placeholder
             )
 
             try:
+                """Using common evaluate_rules fn just sending only one id"""
                 results = contract_service.evaluate_rules(ctx, [rule_id])
                 response.append({'contract_id' : contract.id, 'eligible' : results[0] })
             except Exception as e:
