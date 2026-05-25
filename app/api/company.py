@@ -8,13 +8,13 @@ from app.services.eligiblity import EligibilityService
 router = APIRouter(prefix="/companies", tags=["Companies"])
 
 
-@router.post("/{company_id}/eligible-contracts",response_model=list[int])
+@router.post("/{company_id}/eligible-contracts")
 def eligible_contracts(company_id: int, body: EligibilityPayload, db: Session = Depends(get_db)):
-    """Return ids of contracts (under this company) that pass the given rule."""
+    """Return contract ids (under this company) that pass the rule, per placeholder set."""
     eligibility_service = EligibilityService()
     return eligibility_service.eligible_contracts(
         db=db,
         company_id=company_id,
         rule_id=body.rule_id,
-        placeholder=body.placeholder,
+        placeholders=body.placeholders,
     )
