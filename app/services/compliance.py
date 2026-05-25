@@ -30,7 +30,6 @@ class ComplianceService:
         try:
             results = contract_service.evaluate_rules(ctx, self.rule_ids)
         except KeyError as e:
-            # raised by PlaceholderService.resolve() when a {{name}} has no binding
             raise HTTPException(status_code=400, detail=str(e))
 
         return {

@@ -2,8 +2,11 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
+from app.schemas import EligibilityPayload
 from app.schemas.compliance import CompliancePayload
 from app.services import ComplianceService
+from app.services.eligiblity import EligibilityService
+
 router = APIRouter(prefix="/contracts", tags=["Contracts"])
 
 
@@ -19,6 +22,14 @@ def evaluate(contract_id: int, body: CompliancePayload, db: Session = Depends(ge
     )
     return compliance.evaluate_policy()
 
-# @router.get("/{company_id}/{rule_id}")
-# def get_eligible_contracts(company_id, rule_id, db: Session = Depends(get_db)):
-#     return contract_service.get_eligible_contracts(db, company_id, rule_id)
+@router.post("/{company_id}/eligible-contracts")
+def evaluate(company_id: int, body: EligibilityPayload, db: Session = Depends(get_db)):
+
+    eligibility_service = EligibilityService(
+    )
+    return eligibility_service.eligible_contracts(
+        db=db,
+        company_id=company_id,
+        rule_id=body.rule_id,
+        placeholders=body.placeholders
+    )
