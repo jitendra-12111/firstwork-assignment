@@ -16,6 +16,8 @@ class RuleEngine:
             return self.ctx.get_output(rule_id)
 
         rule = self.ctx.get_rule(rule_id)
+        if rule is None:
+            raise Exception(f"rule {rule_id}: rule could not be found")
         op = rule.operator
 
         if op == 'OR':

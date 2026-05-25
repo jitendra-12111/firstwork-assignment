@@ -26,7 +26,7 @@ class EligibilityService:
             try:
                 results = contract_service.evaluate_rules(ctx, [rule_id])
                 response.append({'contract_id' : contract.id, 'eligible' : results[0] })
-            except KeyError as e:
+            except Exception as e:
                 raise HTTPException(status_code=400, detail=str(e))
 
 

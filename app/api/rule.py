@@ -11,14 +11,8 @@ from app.schemas.rule import RuleResponse, RuleCreate, RuleUpdate
 router = APIRouter(prefix="/rule", tags=["Rule"])
 
 
-#TODO in another folder
-VALID_OPERATORS = {"==", "!=", ">", "<", ">=", "<="}
-
 @router.post("/", response_model=RuleResponse, status_code=201)
 def create_rule(body: RuleCreate, db: Session = Depends(get_db)):
-    if body.operator not in VALID_OPERATORS:
-        raise HTTPException(status_code=400, detail="Operator must be in VALID_OPERATORS")
-
     # create a db model instance
     rule = Rule(**body.model_dump())
 
@@ -48,10 +42,6 @@ def update_rule(rule_id: int, body: RuleUpdate, db: Session = Depends(get_db)):
 
     if rule is None:
         raise HTTPException(status_code=404, detail="Rule not found")
-
-    if body.operator is not None and body.operator not in VALID_OPERATORS:
-        raise HTTPException(status_code=400, detail="Operator must be in VALID_OPERATORS")
-
 
     updates = body.model_dump(exclude_none=True)
 

@@ -1,8 +1,10 @@
 import re
 from typing import Any
 
+from app.core.constants import PLACEHOLDER_PATTERN
+
 class PlaceholderService:
-    PATTERN = re.compile(r"\{\{(\w+)\}\}")
+    PATTERN = re.compile(PLACEHOLDER_PATTERN)
 
     def __init__(self, bindings: dict[str, Any] | None = None):
         self.bindings = bindings or {}

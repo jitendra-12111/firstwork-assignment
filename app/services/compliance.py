@@ -22,15 +22,16 @@ class ComplianceService:
         self.placeholders = placeholders or {}
 
     def evaluate_policy(self):
-        contract = contract_repo.get_with_join_by_user_company(self.db, self.contract_id)
+        contract = contract_repo.get_contract_by_id_join_user_company(self.db, self.contract_id)
         if contract is None:
             raise HTTPException(status_code=404, detail="Contract not found")
 
         ctx = RuleContext(self.db, contract, self.placeholders)
         try:
             results = contract_service.evaluate_rules(ctx, self.rule_ids)
-        except KeyError as e:
+        except Exception as e:
             raise HTTPException(status_code=400, detail=str(e))
+
 
         return {
             "contract_id": self.contract_id,
