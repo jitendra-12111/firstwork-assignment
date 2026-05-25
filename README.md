@@ -1,0 +1,56 @@
+# FirstWork — Compliance Service
+
+---
+
+## Prerequisites
+
+- Docker
+- Python 3.13
+- uv
+- Make
+- Git
+
+---
+
+## Setup
+
+```bash
+git clone <repo-url>
+cd FirstWork-Assignment
+make setup
+```
+
+`make setup` does:
+1. `uv sync` — create `.venv` and install dependencies
+2. `docker compose up -d db` — start MySQL 8.0
+3. Wait for MySQL healthcheck
+4. `alembic upgrade head` — run migrations
+5. Load `docs/seed.sql` — insert seed data
+
+---
+
+## How to use
+
+### Run the API
+```bash
+make start
+```
+Opens at **http://localhost:8000**.
+Swagger UI: **http://localhost:8000/docs**
+
+### Run the tests
+```bash
+make test
+```
+Tests run in-process via FastAPI's `TestClient` — **no need to start the server**. They do need MySQL running and seeded, which `make setup` already handled.
+
+### Other commands
+
+| Command | What it does |
+|---|---|
+| `make migrate` | Apply pending migrations |
+| `make seed` | Reload `docs/seed.sql` |
+| `make db-shell` | Open a `mysql` shell inside the container |
+| `make db-down` | Stop the DB container |
+| `make db-reset` | **DESTRUCTIVE** — nuke volume + re-bootstrap |
+| `make clean` | Remove `.venv` and `__pycache__` |
