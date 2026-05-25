@@ -13,3 +13,4 @@ def evaluate(contract_id: int, db: Session = Depends(get_db)):
 
 # @router.get("/{company_id}/{rule_id}")
 # def get_eligible_contracts(company_id, rule_id, db: Session = Depends(get_db)):
+#     return contract_service.get_eligible_contracts(db, company_id, rule_id)

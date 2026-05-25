@@ -2,7 +2,7 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.repositories import contract_repo, rule_repo
-from app.services import RuleEngine
+from app.services.evaluate import RuleEvaluateService
 from app.utils.common_utils import is_placeholder
 
 
@@ -15,11 +15,11 @@ class ContractService:
 
         # TODO: rule_ids should come from request body, not hardcoded
         response = []
-        rule_engine = RuleEngine(contract)
+        evaluate_rule = RuleEvaluateService(db, contract)
         for rule in rule_repo.get_all(db):
             if not is_placeholder(rule.value):
                 print(rule.id)
-                rule_result = rule_engine.evaluate(rule)
+                rule_result = evaluate_rule.run(rule.id, {})
                 print(rule_result)
                 response.append({'id': rule.id, 'result': rule_result})
 
