@@ -7,13 +7,13 @@ from app.services.rule_context import RuleContext
 
 
 class EligibilityService:
-    def eligible_contracts(self, db: Session,  company_id: int, rule_id: int, placeholder: dict | None = None):
+    def eligible_contracts(self, db: Session, company_id: int, rule_id: int, placeholder: dict | None = None):
 
-        """Get company contracts"""
+        """Get company contracts (with user + company joined to avoid 2N+1)"""
         contracts = contract_repo.get_company_contracts(db, company_id)
 
         if len(contracts) == 0:
-            raise Exception(f'company contracts not found')
+            raise HTTPException(status_code=404, detail="Company has no contracts")
 
         response = []
 
@@ -26,11 +26,13 @@ class EligibilityService:
             )
 
             try:
-                """Using common evaluate_rules fn just sending only one id"""
+                """Reusing evaluate_rules — sending just one rule id"""
                 results = contract_service.evaluate_rules(ctx, [rule_id])
-                response.append({'contract_id' : contract.id, 'eligible' : results[0]['result'] })
+                if results[0]['result']:
+                    response.append(contract.id)
+            except HTTPException:
+                raise
             except Exception as e:
                 raise HTTPException(status_code=400, detail=str(e))
-
 
         return response

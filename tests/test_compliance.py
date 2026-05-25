@@ -3,7 +3,6 @@ Tests for POST /contracts/{contract_id}/evaluate
 
 Response shape:
     {
-      "contract_id": <int>,
       "compliant": <bool>,
       "rules": [ {"rule_id": <int>, "result": <bool>}, ... ]
     }
@@ -79,13 +78,12 @@ def test_placeholder_driving_age_pass():
 # ── RESPONSE SHAPE ─────────────────────────────────────────────────────
 
 def test_compliance_response_shape():
-    """Top-level must have contract_id, compliant, rules (list of {rule_id, result})."""
+    """Top-level must have compliant and rules (list of {rule_id, result})."""
     resp = evaluate_compliance(1, {"rule_ids": [1, 10]})
     assert resp.status_code == 200
 
     body = resp.json()
-    assert set(body.keys()) == {"contract_id", "compliant", "rules"}
-    assert body["contract_id"] == 1
+    assert set(body.keys()) == {"compliant", "rules"}
     assert isinstance(body["compliant"], bool)
     assert isinstance(body["rules"], list)
     for rule in body["rules"]:

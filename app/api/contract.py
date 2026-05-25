@@ -13,7 +13,7 @@ router = APIRouter(prefix="/contracts", tags=["Contracts"])
 """Evaluate compliance"""
 @router.post("/{contract_id}/evaluate")
 def evaluate(contract_id: int, body: CompliancePayload, db: Session = Depends(get_db)):
-
+    """Return compliant bool true or false and rules result bool"""
     compliance = ComplianceService(
         db=db,
         contract_id=contract_id,
@@ -21,17 +21,3 @@ def evaluate(contract_id: int, body: CompliancePayload, db: Session = Depends(ge
         rule_ids=body.rule_ids,
     )
     return compliance.evaluate_policy()
-
-
-"""Get eligible contracts"""
-@router.post("/{company_id}/eligible-contracts")
-def evaluate(company_id: int, body: EligibilityPayload, db: Session = Depends(get_db)):
-
-    eligibility_service = EligibilityService(
-    )
-    return eligibility_service.eligible_contracts(
-        db=db,
-        company_id=company_id,
-        rule_id=body.rule_id,
-        placeholder=body.placeholder
-    )

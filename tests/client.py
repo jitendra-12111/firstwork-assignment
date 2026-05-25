@@ -23,4 +23,4 @@ def evaluate_compliance(contract_id: int, payload: dict):
 
 
 def eligible_contracts(company_id: int, payload: dict):
-    return _client.post(f"/contracts/{company_id}/eligible-contracts", json=payload)
+    return _client.post(f"/companies/{company_id}/eligible-contracts", json=payload)

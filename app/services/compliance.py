@@ -38,7 +38,6 @@ class ComplianceService:
 
 
         return {
-            "contract_id": self.contract_id,
             "compliant": all(r["result"] for r in results), # all rules of contract should be true be compliant
             "rules": results,
         }
