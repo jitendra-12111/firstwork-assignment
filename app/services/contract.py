@@ -16,7 +16,7 @@ class ContractService:
                 so common rule evaluate once and placeholder is common for contract
             """
             output = engine.evaluate(rule_id)
-            response.append({'id': rule_id, 'result': output})
+            response.append({'rule_id': rule_id, 'result': output})
         return response
 
 

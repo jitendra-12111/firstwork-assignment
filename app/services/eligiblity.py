@@ -28,7 +28,7 @@ class EligibilityService:
             try:
                 """Using common evaluate_rules fn just sending only one id"""
                 results = contract_service.evaluate_rules(ctx, [rule_id])
-                response.append({'contract_id' : contract.id, 'eligible' : results[0] })
+                response.append({'contract_id' : contract.id, 'eligible' : results[0]['result'] })
             except Exception as e:
                 raise HTTPException(status_code=400, detail=str(e))
 
