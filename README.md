@@ -209,11 +209,14 @@ For one company, returns the ids of contracts that pass the rule, per placeholde
 
 **Requirement:** evaluate any rule (Level0, Level 1, Level 2) against a single contract 
 
-**Compliance(AND check across every list of rules)**
-When the API receives `rule_ids: [10, 13, 14]`, each id is treated as the root of its own rule graph. The contract is `compliant: true` **only if every root evaluates to true**. Each root can itself be composite — so `rule_ids: [13]` where rule 13 is `(11 AND 12)` and rule 11 is `(1 AND 2 AND 3)` collapses to: contract passes only if rule 1 AND rule 2 AND rule 3 AND rule 12 all pass. Effectively a Level 3 check (AND of Level 2 trees), even though stored rules cap at Level 2.
+**Compliance Check(`check across every list of rules with AND`) (`If rules are level 2 then compliant check become level3 rule`)**
+ - When the API receives `rule_ids: [10, 13, 14]`, each id is treated as the root of its own rule graph.
+ - The contract is `compliant: true` (`only if every root evaluates to true`). 
+ - Each root rule can itself be composite — so `rule_ids: [13]` where rule 13 is `(11 AND 12)` and rule 11 is `(1 AND 2 AND 3)` collapses to: contract passes only if rule 1 AND rule 2 AND rule 3 AND rule 12 all pass. Effectively a Level 3 check (AND of Level 2 trees), even though stored rules cap at Level 2.
 
-**Walk — depth-first, short-circuit.**
-Each root(composite rule): if composite → split `value` on commas → recurse → `any()` for OR, `all()` for AND (both short-circuit on the first decisive child). `Level 0 Rule` do the actual `(field_name operator value)` comparison via `compare()`.
+**Walk — `depth-first, short-circuit.`**
+- Each root(`composite rule`): if composite → split `value` on commas → recurse → `any()` for OR, `all()`(call recursively until Level 0 reached) then evaluate.
+- `Level 0 Rule` do the actual `(field_name operator value)` comparison via `compare()`.
 
 **Caching — per contract, per placeholder set.**
 Two caches live on `RuleContext` (one instance per (contract , placeholder) pass):
@@ -222,8 +225,8 @@ Two caches live on `RuleContext` (one instance per (contract , placeholder) pass
 - `output_cache[rule_id]` → the boolean result, so a shared child evaluates **once** even when many parents reference it. Example: rule `1=Adult` is reused by rules 9, 10, 11, 13, 14 — it runs once per contract no matter how many of those roots are evaluated.
 
 
-**Support for look of failed rule**
-The engine caches every child rule's bool during evaluation, so internally we already know which children failed inside a composite. The API currently returns only the top-level `{rule_id, result}` per requested root — the per-child breakdown stays in `_output_cache`
+**Support for lookup of failed rule**
+- The engine caches every child rule's bool during evaluation, so internally we already know which children failed inside a composite. The API currently returns only the top-level `{rule_id, result}` per requested root — the per-child breakdown stays in `_output_cache`
 
 **Design — RuleContext, Placeholder Service.**
 Two responsibilities, two classes:
@@ -240,7 +243,7 @@ Engine itself is stateless: feed it a `RuleContext` + `PlaceholderService`, call
 **Requirement:** four APIs — create rule, update rule, evaluate compliance, get eligible contracts — built around the single-table rule design above.
 
 **Assumptions:**
-1. **Update/Update rule — one at a time
+1. **Create/Update rule — one at a time
 2. **Evaluate compliance — a contract is compliant only if ALL supplied `rule_ids` evaluate true.** Each rule id can itself be Level 0, 1, or 2 — the engine recurses, so even though the API surface only supports up to Level 2 trees, evaluating a list of Level 2 rules is effectively a Level 3 compliance check (`(rule_13_passes) AND (rule_14_passes) AND ...`).
 3. **Eligible contracts — returns only contract ids that pass the rule.
 
@@ -248,16 +251,14 @@ Engine itself is stateless: feed it a `RuleContext` + `PlaceholderService`, call
 
 - **No bulk create/update.** Data integrity issue, they'd require cross-rule validation that's out of scope here.
 - **`placeholders` is always a list in the API** — empty list = static rule, one dict = single eval, many dicts = bulk eval = [` {"age": 18, "country": "IN"}, {"age": 21, "country": "US"} `]
-- **Validation lives in Pydantic, returns 422 (not 400).** FastAPI convention for schema-level failures. Handlers stay thin.
 
-**Decision/Design**
+- **Decision/Design**
 
 - **`Rule.value` is always `string`.** Based on `FieldName` - ( e.g `User.age` ) retrieve  field data type and then casting logic applied to value on evaluation time.
 - **`joinedload` on `user` + `company`** when fetching contracts — avoids 2N+1 in `/eligible-contracts`. `Reason` - during evaluate of rule, we need contract user, company instance, on lazy load it will hit `SELECT * From User ....`
-- **`Indexes` - `Contract` - Create 3 Indexes, it's a relationship table of `User` and `Company`
-- **Rule Create/Update there are some validators to basic only
-- **`Code Modularized` - api, schema, services, models, repositories
-
+- **`Indexes`** - `Contract` - Create 3 Indexes, it's a relationship table of `User` and `Company`
+- **Rule** Create/Update there are some validators to basic only
+- **`Code Modularized`** - api, schema, services, models, repositories
 ---
 
 ## Tools and libraries
